@@ -83,12 +83,12 @@ add postgres for data
 
 ## Available Models
 
-| Model | ID | Strength |
-|-------|-----|----------|
-| GLM-4.7 | `z-ai/glm4.7` | Best overall (default) |
-| Gemma 3 37B | `google/gemma-3-37b-it` | Quality |
-| MiniMax 27B | `minimax/minimax-27b` | Fast |
-| Kimi K2 | `atatlab/kimi-k2` | Multilingual |
+| Model | ID |
+|-------|-----|
+| Gemma 4 31B | `google/gemma-4-31b-it` |
+| MiniMax M2.7 | `minimaxai/minimax-m2.7` |
+| Nemotron 3 Super 120B | `nvidia/nemotron-3-super-120b-a12b` |
+| Qwen 3.5 122B | `qwen/qwen3.5-122b-a10b` |
 
 ## Templates
 

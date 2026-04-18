@@ -4,7 +4,7 @@ DockerForge CLI - Generate Dockerfiles using NVIDIA NIM API
 
 Usage:
     python cli.py "FastAPI app with PostgreSQL"
-    python cli.py --model z-ai/glm4.7 "Node.js Express with MongoDB"
+    python cli.py --model google/gemma-4-31b-it "Node.js Express with MongoDB"
     python cli.py --template fastapi "with PostgreSQL"
     python cli.py --chat "FastAPI app"
     cat input.txt | python cli.py --stream
