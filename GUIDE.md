@@ -203,7 +203,7 @@ HUGGINGFACE_TOKEN=hf_xxxxxxxxxxxxx
 ### Setup (One-time)
 ```bash
 # Clone repo
-git clone https://github.com/keypa/dockerforge.git
+git clone https://github.com/keypaaa/dockerforge.git
 cd dockerforge
 
 # Install dependencies
@@ -293,7 +293,7 @@ python test_model.py
 
 ## 🔄 If Switching Machines
 
-1. **Clone repo**: `git clone https://github.com/keypa/dockerforge.git`
+1. **Clone repo**: `git clone https://github.com/keypaa/dockerforge.git`
 2. **Install deps**: `pip install -r requirements.txt`
 3. **Copy `.env`** with your tokens
 4. **Database**: 

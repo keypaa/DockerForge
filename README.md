@@ -1,54 +1,79 @@
 # DockerForge ⚒️
 
-> AI-powered Dockerfile generator trained on 50,000+ real-world examples from GitHub
+> AI-powered Dockerfile generator using NVIDIA NIM API
 
 ## Overview
 
-DockerForge is a fine-tuned LLM that generates production-ready Dockerfiles from natural language descriptions. Instead of manually writing complex multi-stage builds, just describe your project and get an optimized Dockerfile instantly.
+DockerForge generates production-ready Dockerfiles from natural language. Uses free NVIDIA NIM models (GLM-4.7, Gemma 3, etc.) to generate optimized multi-stage Dockerfiles.
+
+## Quick Start
+
+```bash
+# Install dependencies
+pip install openai
+
+# Generate a Dockerfile
+python 4-deployment/cli.py "FastAPI with PostgreSQL"
+
+# Or use interactive mode
+python 4-deployment/cli.py -i
+```
 
 ## Features
 
-- 🤖 Trained on 50K+ real-world Dockerfiles from top GitHub repositories
-- 🎯 Supports Python, Node.js, Go, Rust, Java, and more
-- 🔧 Generates multi-stage builds, handles dependencies intelligently
-- ⚡ Fast generation (~2 seconds)
-- 📦 Optimized for production (small image sizes, security best practices)
+- 🎯 Natural language to Dockerfile
+- 🔧 Multi-stage builds (optimized image size)
+- ⚡ Fast generation via NIM API
+- 📦 Security best practices (non-root user)
+- 📋 Interactive mode with /slash commands
+- 📄 Pre-built templates (FastAPI, Django, Express, etc.)
 
-## Quick Start
+## Interactive Mode
+
 ```bash
-# Coming soon
-pip install dockerforge
-
-dockerforge generate "FastAPI app with PostgreSQL and Redis"
+python 4-deployment/cli.py -i
 ```
 
-## Project Status
+```
+dockerforge> FastAPI with Redis
+dockerforge> change base to alpine
+dockerforge> /save
+dockerforge> /exit
+```
 
-🚧 **Currently in development** - Data collection phase
+Commands: `/template`, `/model`, `/save`, `/show`, `/clear`, `/help`, `/exit`
 
-- [x] Project planning
-- [ ] GitHub scraper (in progress)
-- [ ] Dataset preparation
-- [ ] Model training
-- [ ] CLI tool
-- [ ] Public release
+## Available Models
 
-## Dataset
+- GLM-4.7 (default)
+- Gemma 3 37B
+- MiniMax 27B
+- Kimi K2
 
-We're building a comprehensive dataset by analyzing:
-- 50,000+ repositories with Dockerfiles
-- Real-world production examples
-- Multiple languages and frameworks
-- Diverse tech stacks
+## Templates
 
-## Contributing
+- FastAPI, Flask, Django (Python)
+- Express, Next.js (Node.js)
+- Go
 
-Interested in contributing? Star the repo and watch for updates!
+## Architecture
+
+```
+4-deployment/
+├── cli.py           # Main CLI tool
+├── config.py         # Settings
+├── templates/       # Pre-built templates
+└── .env.example   # Env template
+```
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file
+MIT - See [LICENSE](LICENSE) file
 
 ---
 
+<<<<<<< HEAD
 **Built with ❤️ by [@keypa](https://github.com/keypaa)**
+=======
+**Built with ❤️ by [@keypaa](https://github.com/keypaa)**
+>>>>>>> 9072fd8 (docs: Update README with CLI instructions and fix username)
