@@ -51,4 +51,4 @@ MIT License - See [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by [@keypa](https://github.com/keypa)**
+**Built with ❤️ by [@keypa](https://github.com/keypaa)**
