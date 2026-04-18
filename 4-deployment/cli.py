@@ -616,6 +616,64 @@ Dockerfile:
                         print("  /feedback --list   - show stored", file=sys.stderr)
                         print("  /feedback --clear - clear all", file=sys.stderr)
                     continue
+                elif cmd == "/from":
+                    # Generate from requirements.txt or package.json
+                    if len(parts) > 1:
+                        filepath = parts[1]
+                    else:
+                        # Auto-detect common files
+                        for f in [
+                            "requirements.txt",
+                            "pyproject.toml",
+                            "package.json",
+                            "go.mod",
+                        ]:
+                            if os.path.exists(f):
+                                filepath = f
+                                break
+                        else:
+                            print(
+                                "[!] No requirements.txt/pyproject.toml/package.json found",
+                                file=sys.stderr,
+                            )
+                            continue
+
+                    if not os.path.exists(filepath):
+                        print(f"[!] File not found: {filepath}", file=sys.stderr)
+                        continue
+
+                    print(f"[*] Reading {filepath}...", file=sys.stderr)
+                    with open(filepath) as f:
+                        content = f.read()
+
+                    # Parse and generate prompt
+                    if filepath.endswith(".txt"):
+                        deps = [
+                            l.strip()
+                            for l in content.split("\n")
+                            if l.strip() and not l.startswith("#")
+                        ]
+                        prompt = f"Generate a Dockerfile for Python with these dependencies: {', '.join(deps[:15])}"
+                    elif filepath == "package.json":
+                        # Extract name and deps
+                        import json as pkg_json
+
+                        pkg = pkg_json.loads(content)
+                        name = pkg.get("name", "app")
+                        deps = list(pkg.get("dependencies", {}).keys()) + list(
+                            pkg.get("devDependencies", {}).keys()
+                        )
+                        prompt = f"Generate a Dockerfile for Node.js {name} with: {', '.join(deps[:15])}"
+                    elif filepath == "go.mod":
+                        prompt = "Generate a Dockerfile for a Go application"
+                    else:
+                        prompt = f"Generate a Dockerfile based on: {content[:500]}"
+
+                    print("[*] Generating...", file=sys.stderr)
+                    content = generate(f"Generate a Dockerfile for: {prompt}")
+                    current_dockerfile = clean(content)
+                    print_dockerfile(current_dockerfile)
+                    continue
                 elif cmd == "/template":
                     if len(parts) > 1:
                         t = template_lib.get_template(parts[1])
