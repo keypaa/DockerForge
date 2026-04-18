@@ -72,8 +72,4 @@ MIT - See [LICENSE](LICENSE) file
 
 ---
 
-<<<<<<< HEAD
-**Built with ❤️ by [@keypa](https://github.com/keypaa)**
-=======
 **Built with ❤️ by [@keypaa](https://github.com/keypaa)**
->>>>>>> 9072fd8 (docs: Update README with CLI instructions and fix username)
