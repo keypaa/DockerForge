@@ -29,56 +29,39 @@ python cli.py -i
 
 ### One-liner mode
 ```bash
-# Basic usage
 python cli.py "FastAPI app with PostgreSQL"
-
-# With specific model
-python cli.py -m z-ai/glm4.7 "Node.js Express with MongoDB"
-
-# With template
 python cli.py --template fastapi "with Redis"
-
-# From file
-cat input.txt | python cli.py
-
-# Save to file
-python cli.py "Python Flask app" -o Dockerfile
-
-# Stream output
-python cli.py "FastAPI with Redis" --stream
-
-# List available templates
-python cli.py --list-templates
+python cli.py -o Dockerfile "Flask app"
+python cli.py --validate "Go API"
+python cli.py --validate --lint "FastAPI"    # with hadolint
 ```
 
 ### Interactive mode (recommended)
 ```bash
-# Start interactive mode
 python cli.py -i
-
-# Or with initial description
-python cli.py -i "FastAPI app"
 ```
 
-Then at the `dockerforge>` prompt:
-
+Commands:
 ```bash
-# Generate a Dockerfile
+# Generate
 FastAPI with Redis
 
-# Change the Dockerfile
+# Modify
 change base to alpine
-make it smaller
-add postgres for data
+add postgres
 
 # Use slash commands
-/template fastapi    # Use template
-/model z-ai/glm4.7  # Change model
-/save Dockerfile     # Save to file
-/show               # Display current
-/clear              # Reset chat
+/template fastapi     # Use template
+/model google/gemma-4-31b-it  # Change model
+/from requirements.txt  # Generate from deps file
+/explain            # Explain current Dockerfile
+/save Dockerfile   # Save to file
+/show              # Display current
+/history           # Show recent generations
+/clear             # Reset chat
 /help               # Show help
-/exit               # Exit
+/feedback FastAPI uses port 5000  # Store tip for next gen
+/exit
 ```
 
 ## Available Models
@@ -90,74 +73,62 @@ add postgres for data
 | Nemotron 3 Super 120B | `nvidia/nemotron-3-super-120b-a12b` |
 | Qwen 3.5 122B | `qwen/qwen3.5-122b-a10b` |
 
+## Features
+
+| Feature | Command |
+|---------|---------|
+| Generate | `python cli.py "description"` |
+| Templates | `--template fastapi` |
+| Validation | `--validate --lint` |
+| Generate from file | `/from requirements.txt` |
+| Explain Dockerfile | `/explain` |
+| Store feedback | `/feedback FastAPI uses port 5000` |
+| Show history | `/history` |
+
 ## Templates
 
-| Template | Description | Default Port |
-|----------|-------------|-------------|
+| Template | Description | Port |
+|----------|-------------|------|
 | FastAPI | Python FastAPI with Uvicorn | 8000 |
 | Flask | Python Flask with Gunicorn | 5000 |
-| Django | Python Django with Gunicorn | 8000 |
-| Express | Node.js Express with JWT | 3000 |
-| Next.js | React frontend with Next.js | 3000 |
+| Django | Python Django | 8000 |
+| Express | Node.js Express | 3000 |
+| Next.js | React frontend | 3000 |
 | Go | Go HTTP server | 8080 |
 
-Usage:
+## Validation
+
 ```bash
-python cli.py --template fastapi "with PostgreSQL"
-# Or in interactive mode:
-> /template fastapi
-> FastAPI with Redis
+# Basic validation (FROM required, no :latest)
+python cli.py "FastAPI" --validate
+
+# With hadolint (requires hadolint installed)
+# Install: scoop install hadolint
+python cli.py "FastAPI" --validate --lint
 ```
 
-## Examples
+## Feedback System
 
-### Python - FastAPI with PostgreSQL
+Store tips that auto-apply to future generations:
 ```bash
-python cli.py "FastAPI app with PostgreSQL"
-```
-```dockerfile
-FROM python:3.11-slim as builder
-WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev
-COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-FROM python:3.11-slim
-WORKDIR /app
-COPY --from=builder /root/.local /root/.local
-COPY . .
-RUN useradd -m -u 1000 appuser
-USER appuser
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+/feedback FastAPI uses port 5000
+/feedback #postgres PostgreSQL uses port 5432
+/feedback --list    # Show stored
+/feedback --clear  # Clear all
 ```
 
-### Interactive Session
+## History
+
+Automatically saves generations:
 ```bash
-$ python cli.py -i
-dockerforge> Python FastAPI with Redis
-[generating...]
-==================================================
-FROM python:3.11-slim
-...
-==================================================
-
-dockerforge> change base to alpine
-[modifying...]
-==================================================
-FROM python:3.11-alpine
-...
-==================================================
-
-dockerforge> /save
-[✓] Saved to Dockerfile
-dockerforge> /exit
+/history          # Show last 5
+/history 10     # Show last 10
 ```
 
 ## Environment Variables
 
 ```bash
 # .env file
-NVIDIA_API_KEY=your-api-key-here
-DEFAULT_MODEL=z-ai/glm4.7
+NVIDIA_API_KEY=your-key
+DEFAULT_MODEL=google/gemma-4-31b-it
 ```
