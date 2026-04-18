@@ -390,12 +390,17 @@ def main():
         if args.validate:
             print("[*] Validating...", file=sys.stderr)
             valid, errors = validate.validate(dockerfile)
+            print("-" * 30, file=sys.stderr)
             if valid:
                 print("[✓] Valid Dockerfile", file=sys.stderr)
+                print("  - FROM instruction present", file=sys.stderr)
+                print("  - Base image tag specified", file=sys.stderr)
             else:
                 print("[!] Validation errors:", file=sys.stderr)
                 for e in errors:
-                    print(f"  {e}", file=sys.stderr)
+                    print(f"  - {e}", file=sys.stderr)
+            print("-" * 30, file=sys.stderr)
+            print()  # newline before output
 
         # Output
         if args.output:
