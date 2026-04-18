@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    command: gunicorn, --bind, 0.0.0.0:5000, app:app
+    user: "1000:1000"
+    environment:
+      - DEBUG=0
+    volumes:
+      - .:/app
+    restart: unless-stopped

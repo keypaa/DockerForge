@@ -21,6 +21,7 @@ import templates as template_lib
 import validate
 import feedback
 import history
+import multifile
 
 # Configuration
 NIM_BASE_URL = config.NIM_BASE_URL
@@ -306,6 +307,11 @@ def main():
         action="store_true",
         help="Validate with hadolint (requires hadolint installed)",
     )
+    parser.add_argument(
+        "--compose",
+        action="store_true",
+        help="Generate docker-compose.yml and .dockerignore",
+    )
 
     args = parser.parse_args()
 
@@ -406,6 +412,14 @@ def main():
 
         # Save to history
         history.add_entry(final_description, dockerfile)
+
+        # Generate compose files if requested
+        if args.compose:
+            files = multifile.generate_all(dockerfile)
+            for filename, content in files.items():
+                with open(filename, "w") as f:
+                    f.write(content)
+                print(f"[✓] Created {filename}", file=sys.stderr)
 
         # Output
         if args.output:
@@ -609,6 +623,17 @@ Dockerfile:
                             print(f"    {i + 1}. {ts} - {prompt}...", file=sys.stderr)
                     else:
                         print("  No history yet", file=sys.stderr)
+                    continue
+                elif cmd == "/compose":
+                    # Generate docker-compose and .dockerignore
+                    if current_dockerfile:
+                        files = multifile.generate_all(current_dockerfile)
+                        for filename, content in files.items():
+                            with open(filename, "w") as f:
+                                f.write(content)
+                            print(f"[✓] Created {filename}", file=sys.stderr)
+                    else:
+                        print("[ ] No Dockerfile generated yet", file=sys.stderr)
                     continue
                 elif cmd == "/feedback":
                     # Parse: /feedback [--list|--clear] [text]
