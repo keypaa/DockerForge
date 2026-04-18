@@ -20,6 +20,7 @@ import config
 import templates as template_lib
 import validate
 import feedback
+import history
 
 # Configuration
 NIM_BASE_URL = config.NIM_BASE_URL
@@ -403,6 +404,9 @@ def main():
             print("-" * 30, file=sys.stderr)
             print()  # newline before output
 
+        # Save to history
+        history.add_entry(final_description, dockerfile)
+
         # Output
         if args.output:
             with open(args.output, "w") as f:
@@ -507,6 +511,8 @@ def run_chat(
         print("[*] Generating...", file=sys.stderr)
         content = generate(f"Generate a Dockerfile for: {initial_description}")
         current_dockerfile = clean(content)
+        # Save to history
+        history.add_entry(initial_description, current_dockerfile)
         messages.append(
             {
                 "role": "assistant",
@@ -556,6 +562,7 @@ def run_chat(
                     filename = parts[1] if len(parts) > 1 else "Dockerfile"
                     with open(filename, "w") as f:
                         f.write(current_dockerfile)
+                    history.add_entry(f"saved to {filename}", current_dockerfile)
                     print(f"[✓] Saved to {filename}", file=sys.stderr)
                     continue
                 elif cmd == "/explain":
@@ -587,6 +594,21 @@ Dockerfile:
                     messages = [{"role": "system", "content": build_system()}]
                     current_dockerfile = ""
                     print("[*] Chat cleared", file=sys.stderr)
+                    continue
+                elif cmd == "/history":
+                    # Show history
+                    limit = 5
+                    if len(parts) > 1 and parts[1].isdigit():
+                        limit = int(parts[1])
+                    entries = history.list_history(limit)
+                    if entries:
+                        print("  Recent generations:", file=sys.stderr)
+                        for i, entry in enumerate(entries):
+                            ts = entry.get("timestamp", "")[:19]
+                            prompt = entry.get("prompt", "")[:50]
+                            print(f"    {i + 1}. {ts} - {prompt}...", file=sys.stderr)
+                    else:
+                        print("  No history yet", file=sys.stderr)
                     continue
                 elif cmd == "/feedback":
                     # Parse: /feedback [--list|--clear] [text]

@@ -1,0 +1,8 @@
+[
+  {
+    "prompt": "Flask app",
+    "dockerfile": "FROM python:3.11-slim AS builder\n\nWORKDIR /app\n\nENV PYTHONDONTWRITEBYTECODE=1 \\\n    PYTHONUNBUFFERED=1\n\nCOPY requirements.txt .\n\nRUN --mount=type=cache,target=/root/.cache/pip \\\n    pip install --user --no-cache-dir -r requirements.txt\n\nFROM python:3.11-slim\n\nWORKDIR /app\n\nENV PYTHONDONTWRITEBYTECODE=1 \\\n    PYTHONUNBUFFERED=1 \\\n    PATH=/root/.local/bin:$PATH\n\nCOPY --from=builder /root/.local /root/.local\nCOPY --chown=appuser:appuser . .\n\nRUN addgroup --system appuser && adduser --system --group appuser\n\nUSER appuser\n\nEXPOSE 5000\n\nCMD [\"gunicorn\", \"--bind\", \"0.0.0.0:5000\", \"app:app\"]",
+    "tags": [],
+    "timestamp": "2026-04-18T22:17:08.538562"
+  }
+]
