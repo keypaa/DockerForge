@@ -23,7 +23,7 @@ Tracking ideas and implementation status.
 | # | Feature | Priority | Notes |
 |---|---------|----------|-------|
 | 4 | **Generate FROM existing** | Medium | From requirements.txt / package.json |
-| 5 | **Feedback system** | Medium | Auto-learns from corrections & tips, retrieves relevant on next gen |
+| 5 | **Feedback system** | ✅ Done | Auto-learns from corrections & tips, retrieves relevant on next gen |
 | 6 | **History & favorites** | Medium | Save/reuse generations |
 | 7 | **Analysis mode** | Medium | Optimize existing Dockerfiles |
 | 8 | **Dockerfile → description** | Low | Explain what a Dockerfile does |

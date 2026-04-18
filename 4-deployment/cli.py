@@ -558,6 +558,25 @@ def run_chat(
                         f.write(current_dockerfile)
                     print(f"[✓] Saved to {filename}", file=sys.stderr)
                     continue
+                elif cmd == "/explain":
+                    # Explain the current Dockerfile
+                    if not current_dockerfile:
+                        print("[ ] No Dockerfile to explain", file=sys.stderr)
+                        continue
+                    print("[*] Analyzing Dockerfile...", file=sys.stderr)
+                    explain_prompt = f"""Explain this Dockerfile in simple terms:
+- What does it do?
+- What language/framework?
+- What are the key steps?
+- Any security considerations?
+
+Dockerfile:
+{current_dockerfile}"""
+                    content = generate(explain_prompt)
+                    print("\n" + "=" * 50)
+                    print(content)
+                    print("=" * 50 + "\n")
+                    continue
                 elif cmd == "/show":
                     if current_dockerfile:
                         print_dockerfile(current_dockerfile)
