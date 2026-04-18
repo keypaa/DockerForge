@@ -138,6 +138,28 @@ def get_api_key() -> str:
     return api_key
 
 
+def get_default_model() -> str:
+    """Get default model from environment or config."""
+    # First check env var
+    model = os.getenv("DEFAULT_MODEL")
+    if model:
+        return model
+
+    # Then check .env file
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("DEFAULT_MODEL="):
+                    model = line.split("=", 1)[1].strip()
+                    if model:
+                        return model
+
+    # Fall back to config default
+    return config.DEFAULT_MODEL
+
+
 def get_client() -> OpenAI:
     """Create OpenAI client configured for NIM."""
     return OpenAI(base_url=NIM_BASE_URL, api_key=get_api_key())
@@ -244,8 +266,8 @@ def main():
     parser.add_argument(
         "--model",
         "-m",
-        default=DEFAULT_MODEL,
-        help=f"Model to use (default: {DEFAULT_MODEL})",
+        default=None,
+        help=f"Model to use (default: from .env or config)",
     )
     parser.add_argument(
         "--temperature",
@@ -305,6 +327,9 @@ def main():
     else:
         base_prompt = None
 
+    # Get model from args or .env
+    model = args.model or get_default_model()
+
     # Get description from args or stdin
     description = args.description
     if not description:
@@ -318,14 +343,14 @@ def main():
         sys.exit(1)
 
     print("[*] Generating Dockerfile...", file=sys.stderr)
-    print(f"[*] Model: {args.model}", file=sys.stderr)
+    print(f"[*] Model: {model}", file=sys.stderr)
     print(f"[*] Stream: {args.stream}", file=sys.stderr)
 
     try:
         final_description = base_prompt or description
         dockerfile = generate_dockerfile(
             description=final_description,
-            model=args.model,
+            model=model,
             temperature=args.temperature,
             stream=args.stream,
         )
@@ -360,7 +385,7 @@ def run_chat(
         readline = None
 
     # Start with model client
-    model = model or DEFAULT_MODEL
+    model = model or get_default_model()
     client = get_client()
     messages = []
 
