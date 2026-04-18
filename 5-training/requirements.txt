@@ -1,0 +1,17 @@
+# DockerForge Training Requirements
+# Install with: pip install -r requirements.txt
+
+# Core
+unsloth[cu128-torch270]>=2024.12
+transformers>=4.40.0
+accelerate>=0.25.0
+peft>=0.8.0
+bitsandbytes>=0.41.0
+
+# Data
+datasets>=2.16.0
+trl>=0.8.0
+
+# Utilities
+torch>=2.2.0
+numpy>=1.24.0
