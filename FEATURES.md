@@ -24,7 +24,7 @@ Tracking ideas and implementation status.
 
 | # | Feature | Priority | Notes |
 |---|---------|----------|-------|
-| 4 | **Generate FROM existing** | Medium | From requirements.txt / package.json |
+| 4 | **Generate FROM existing** | ✅ Done | /from command parses requirements.txt etc. |
 | 5 | **History & favorites** | Medium | Save/reuse generations |
 | 6 | **Analysis mode** | Medium | Optimize existing Dockerfiles |
 | 7 | **Multi-file output** | Low | .dockerignore, docker-compose.yml |
