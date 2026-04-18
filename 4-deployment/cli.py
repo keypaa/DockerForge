@@ -18,6 +18,7 @@ from openai import OpenAI
 # Import config and templates
 import config
 import templates as template_lib
+import validate
 
 # Configuration
 NIM_BASE_URL = config.NIM_BASE_URL
@@ -295,6 +296,14 @@ def main():
     parser.add_argument(
         "--chat", "-C", action="store_true", help="Alias for --interactive"
     )
+    parser.add_argument(
+        "--validate", "-V", action="store_true", help="Validate generated Dockerfile"
+    )
+    parser.add_argument(
+        "--lint",
+        action="store_true",
+        help="Validate with hadolint (requires hadolint installed)",
+    )
 
     args = parser.parse_args()
 
@@ -311,6 +320,7 @@ def main():
         return
 
     # Handle template
+    base_prompt = None
     if args.template:
         template = template_lib.get_template(args.template)
         if not template:
@@ -320,12 +330,9 @@ def main():
                 file=sys.stderr,
             )
             sys.exit(1)
-        # Use template prompt as base, append user description
         base_prompt = template_lib.render_prompt(template, args.description)
         print(f"[*] Using template: {template['name']}", file=sys.stderr)
         print(f"[*] Port: {template.get('defaultPort', 'N/A')}", file=sys.stderr)
-    else:
-        base_prompt = None
 
     # Get model from args or .env
     model = args.model or get_default_model()
@@ -341,6 +348,26 @@ def main():
     if not description:
         print("Error: No description provided", file=sys.stderr)
         sys.exit(1)
+
+    # VALIDATE FILE MODE (when --validate used with a file path, not description)
+    if args.validate and os.path.isfile(description):
+        with open(description) as f:
+            dockerfile = f.read()
+        print("[*] Validating Dockerfile...", file=sys.stderr)
+        if args.lint:
+            print("[*] Using hadolint...", file=sys.stderr)
+            valid, errors = validate.validate(dockerfile, use_hadolint=True)
+        else:
+            valid, errors = validate.validate(dockerfile, use_hadolint=False)
+
+        if valid:
+            print("[✓] Valid Dockerfile", file=sys.stderr)
+        else:
+            print("[!] Validation errors:", file=sys.stderr)
+            for e in errors:
+                print(f"  {e}", file=sys.stderr)
+            sys.exit(1)
+        return
 
     print("[*] Generating Dockerfile...", file=sys.stderr)
     print(f"[*] Model: {model}", file=sys.stderr)
@@ -358,6 +385,17 @@ def main():
         if args.stream:
             # Already printed
             return
+
+        # Validate if requested
+        if args.validate:
+            print("[*] Validating...", file=sys.stderr)
+            valid, errors = validate.validate(dockerfile)
+            if valid:
+                print("[✓] Valid Dockerfile", file=sys.stderr)
+            else:
+                print("[!] Validation errors:", file=sys.stderr)
+                for e in errors:
+                    print(f"  {e}", file=sys.stderr)
 
         # Output
         if args.output:
