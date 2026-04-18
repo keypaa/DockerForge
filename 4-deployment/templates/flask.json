@@ -1,0 +1,7 @@
+{
+  "name": "Flask",
+  "description": "Python Flask with Gunicorn",
+  "tags": ["python", "flask", "api"],
+  "defaultPort": 5000,
+  "prompt": "Generate a multi-stage Dockerfile for a Python Flask application with:\n- Base: python:3.11-slim\n- Dependencies in requirements.txt\n- Gunicorn as the server\n- Non-root user\n- Port 5000"
+}

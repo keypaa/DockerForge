@@ -1,0 +1,7 @@
+{
+  "name": "Next.js",
+  "description": "React frontend with Next.js",
+  "tags": ["node", "nextjs", "react", "frontend"],
+  "defaultPort": 3000,
+  "prompt": "Generate a multi-stage Dockerfile for a Next.js application with:\n- Base: node:20-alpine\n- Stage 1: dependencies (npm ci)\n- Stage 2: build (npm run build)\n- Stage 3: production runner\n- NODE_ENV=production\n- Non-root user\n- Port 3000"
+}

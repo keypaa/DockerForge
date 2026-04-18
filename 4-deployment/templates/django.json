@@ -1,0 +1,7 @@
+{
+  "name": "Django",
+  "description": "Python Django with Gunicorn",
+  "tags": ["python", "django", "web"],
+  "defaultPort": 8000,
+  "prompt": "Generate a multi-stage Dockerfile for a Python Django application with:\n- Base: python:3.11-slim\n- Dependencies in requirements.txt\n- Gunicorn as the server with 4 workers\n- Static files collectstatic\n- Non-root user\n- Port 8000"
+}

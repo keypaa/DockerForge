@@ -1,0 +1,7 @@
+{
+  "name": "Go",
+  "description": "Go HTTP server",
+  "tags": ["go", "golang", "api"],
+  "defaultPort": 8080,
+  "prompt": "Generate a multi-stage Dockerfile for a Go HTTP server with:\n- Base: golang:1.21-alpine for building\n- Multi-stage: builder + runtime\n- Static binary output\n- Non-root user\n- Port 8080"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "FastAPI",
+  "description": "Python FastAPI with Uvicorn",
+  "tags": ["python", "fastapi", "api"],
+  "defaultPort": 8000,
+  "prompt": "Generate a multi-stage Dockerfile for a Python FastAPI application with:\n- Base: python:3.11-slim\n- Dependencies in requirements.txt\n- Uvicorn as the server\n- Non-root user\n- Port 8000"
+}

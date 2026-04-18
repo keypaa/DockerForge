@@ -19,7 +19,7 @@ Tracking ideas and implementation status.
 | # | Feature | Priority | Real Purpose | Notes |
 |---|---------|----------|--------------|-------|
 | 1 | **Chat mode** | High | Interactive REPL to iterate on Dockerfiles ("change base to alpine", "add redis") | Actually USE it day-to-day |
-| 2 | **Template library** | High | Pre-built templates for common stacks (FastAPI, Django, Next.js, Go, etc.) | Quick wins for common stacks |
+| 2 | **Template library** | ✅ Done | Templates for FastAPI, Django, Express, Next.js, Go, Flask | ✅ Done |
 | 3 | **Dockerfile validation** | High | Run `docker build --dry-run` to verify it actually works | Quality assurance, differentiator |
 | 4 | **Generate FROM existing** | Medium | Paste a `requirements.txt` or `package.json` and it generates the Dockerfile | Low-friction start |
 | 5 | **History & favorites** | Medium | Save/reuse previous generations with tags | Productivity |

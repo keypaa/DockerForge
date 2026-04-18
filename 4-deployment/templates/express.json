@@ -1,0 +1,7 @@
+{
+  "name": "Express",
+  "description": "Node.js Express with JWT",
+  "tags": ["node", "express", "api", "javascript"],
+  "defaultPort": 3000,
+  "prompt": "Generate a multi-stage Dockerfile for a Node.js Express application with:\n- Base: node:20-alpine\n- Dependencies in package.json\n- npm ci for production\n- NODE_ENV=production\n- Non-root user (node)\n- Port 3000"
+}

@@ -5,6 +5,7 @@ DockerForge CLI - Generate Dockerfiles using NVIDIA NIM API
 Usage:
     python cli.py "FastAPI app with PostgreSQL"
     python cli.py --model z-ai/glm4.7 "Node.js Express with MongoDB"
+    python cli.py --template fastapi "with PostgreSQL"
     cat input.txt | python cli.py --stream
 """
 
@@ -13,8 +14,9 @@ import sys
 import argparse
 from openai import OpenAI
 
-# Import config
+# Import config and templates
 import config
+import templates as template_lib
 
 # Configuration
 NIM_BASE_URL = config.NIM_BASE_URL
@@ -171,8 +173,40 @@ def main():
     )
     parser.add_argument("--output", "-o", help="Output file (default: stdout)")
     parser.add_argument("--stream", action="store_true", help="Stream output")
+    parser.add_argument(
+        "--template",
+        "-T",
+        help=f"Use template (templates: {', '.join(template_lib.list_names())})",
+    )
+    parser.add_argument(
+        "--list-templates", "-L", action="store_true", help="List available templates"
+    )
 
     args = parser.parse_args()
+
+    # List templates and exit
+    if args.list_templates:
+        print("Available templates:")
+        for t in template_lib.list_templates():
+            print(f"  {t['name']:12} - {t['description']}")
+        return
+
+    # Handle template
+    if args.template:
+        template = template_lib.get_template(args.template)
+        if not template:
+            print(f"[!] Template not found: {args.template}", file=sys.stderr)
+            print(
+                f"[!] Available: {', '.join(template_lib.list_names())}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        # Use template prompt as base, append user description
+        base_prompt = template_lib.render_prompt(template, args.description)
+        print(f"[*] Using template: {template['name']}", file=sys.stderr)
+        print(f"[*] Port: {template.get('defaultPort', 'N/A')}", file=sys.stderr)
+    else:
+        base_prompt = None
 
     # Get description from args or stdin
     description = args.description
@@ -191,8 +225,10 @@ def main():
     print(f"[*] Stream: {args.stream}", file=sys.stderr)
 
     try:
+        # Use template prompt or raw description
+        final_description = base_prompt or description
         dockerfile = generate_dockerfile(
-            description=description,
+            description=final_description,
             model=args.model,
             temperature=args.temperature,
             stream=args.stream,
