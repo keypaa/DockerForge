@@ -265,10 +265,21 @@ def main():
         "--list-templates", "-L", action="store_true", help="List available templates"
     )
     parser.add_argument(
-        "--chat", "-C", action="store_true", help="Start interactive chat mode"
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Start interactive mode (llama.cpp style)",
+    )
+    parser.add_argument(
+        "--chat", "-C", action="store_true", help="Alias for --interactive"
     )
 
     args = parser.parse_args()
+
+    # INTERACTIVE MODE - drops directly into prompt
+    if args.interactive or args.chat:
+        run_chat(args.description, args.template, args.model, args.temperature)
+        return
 
     # List templates and exit
     if args.list_templates:
@@ -306,17 +317,11 @@ def main():
         print("Error: No description provided", file=sys.stderr)
         sys.exit(1)
 
-    # CHAT MODE
-    if args.chat:
-        run_chat(description, args.template, args.model, args.temperature)
-        return
-
     print("[*] Generating Dockerfile...", file=sys.stderr)
     print(f"[*] Model: {args.model}", file=sys.stderr)
     print(f"[*] Stream: {args.stream}", file=sys.stderr)
 
     try:
-        # Use template prompt or raw description
         final_description = base_prompt or description
         dockerfile = generate_dockerfile(
             description=final_description,
@@ -343,61 +348,193 @@ def main():
 
 
 def run_chat(
-    initial_description: str,
+    initial_description: str = None,
     template: str = None,
     model: str = None,
     temperature: float = 0.3,
 ):
-    """Run interactive chat mode."""
+    """Run interactive chat mode - like llama.cpp."""
     try:
         import readline
     except ImportError:
         readline = None
 
-    session = ChatSession(model or DEFAULT_MODEL, temperature)
-    session.start(initial_description, template)
+    # Start with model client
+    model = model or DEFAULT_MODEL
+    client = get_client()
+    messages = []
 
-    print("[*] Chat mode started", file=sys.stderr)
-    print("[*] Enter modifications (Ctrl+C to exit)", file=sys.stderr)
+    def build_system():
+        """Build system prompt."""
+        base = DOCKERFILE_SYSTEM_PROMPT
+        if template:
+            t = template_lib.get_template(template)
+            if t:
+                base += f"\n\nTemplate: {t['name']} - {t.get('prompt', '')}"
+        return base
+
+    # If initial description provided, use it
+    if initial_description:
+        messages = [
+            {"role": "system", "content": build_system()},
+            {
+                "role": "user",
+                "content": f"Generate a Dockerfile for: {initial_description}",
+            },
+        ]
+    else:
+        messages = [{"role": "system", "content": build_system()}]
+
+    print("[*] DockerForge Interactive", file=sys.stderr)
+    print("[*] Commands: /template /model /save /show /help /exit", file=sys.stderr)
+    print("[*] Natural language goes directly to the model", file=sys.stderr)
     print("", file=sys.stderr)
 
-    # Generate initial Dockerfile
-    print("[*] Generating...", file=sys.stderr)
-    session.generate()
-    session.print_dockerfile()
+    def generate(prompt: str):
+        """Generate from model."""
+        extra_params = {}
+        if "glm" in model.lower():
+            extra_params["extra_body"] = {
+                "chat_template_kwargs": {
+                    "enable_thinking": False,
+                    "clear_thinking": False,
+                }
+            }
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages + [{"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=2048,
+            **extra_params,
+        )
+        return response.choices[0].message.content
+
+    def clean(content: str) -> str:
+        """Clean Dockerfile from response."""
+        if "```dockerfile" in content:
+            start = content.find("```dockerfile") + len("```dockerfile")
+            end = content.find("```", start)
+            return content[start:end].strip()
+        if "```" in content:
+            start = content.find("```") + 3
+            end = content.find("```", start)
+            if end > start:
+                return content[start:end].strip()
+        return content
+
+    def print_dockerfile(df: str):
+        print("\n" + "=" * 50)
+        print(df)
+        print("=" * 50 + "\n")
+
+    # Generate initial if description provided
+    current_dockerfile = ""
+    if initial_description:
+        print("[*] Generating...", file=sys.stderr)
+        content = generate(f"Generate a Dockerfile for: {initial_description}")
+        current_dockerfile = clean(content)
+        messages.append(
+            {
+                "role": "assistant",
+                "content": f"```dockerfile\n{current_dockerfile}\n```",
+            }
+        )
+        print_dockerfile(current_dockerfile)
 
     # Chat loop
     while True:
         try:
-            instruction = input("\n> ").strip()
-            if not instruction:
+            line = input("dockerforge> ").strip()
+            if not line:
                 continue
 
-            # Handle special commands
-            if instruction.lower() in ("exit", "quit", "q"):
-                break
-            if instruction.lower() == "save":
-                filename = input("  Filename: ").strip() or "Dockerfile"
-                with open(filename, "w") as f:
-                    f.write(session.dockerfile)
-                print(f"[✓] Saved to {filename}", file=sys.stderr)
-                continue
-            if instruction.lower() == "show":
-                session.print_dockerfile()
-                continue
-            if instruction.lower() == "help":
-                print("  Commands: save, show, help, exit/quit/q", file=sys.stderr)
-                print("  Examples:", file=sys.stderr)
-                print("    change base to alpine", file=sys.stderr)
-                print("    add redis for caching", file=sys.stderr)
-                print("    make it smaller", file=sys.stderr)
-                print("    switch to gunicorn", file=sys.stderr)
-                continue
+            # SLASH COMMANDS
+            if line.startswith("/"):
+                parts = line.split()
+                cmd = parts[0].lower()
 
-            # Generate modification
-            print("[*] Modifying...", file=sys.stderr)
-            session.modify(instruction)
-            session.print_dockerfile()
+                if cmd == "/exit" or cmd == "/q":
+                    break
+                elif cmd == "/help":
+                    print("  Commands:", file=sys.stderr)
+                    print(
+                        "    /template [name]  - use template (e.g., /template fastapi)",
+                        file=sys.stderr,
+                    )
+                    print("    /model [name]    - change model", file=sys.stderr)
+                    print("    /save [file]    - save Dockerfile", file=sys.stderr)
+                    print(
+                        "    /show          - display current Dockerfile",
+                        file=sys.stderr,
+                    )
+                    print("    /clear        - clear chat history", file=sys.stderr)
+                    print("    /help         - show this help", file=sys.stderr)
+                    print("  Examples:", file=sys.stderr)
+                    print("    FastAPI with Redis", file=sys.stderr)
+                    print("    make it smaller", file=sys.stderr)
+                    print("    change base to alpine", file=sys.stderr)
+                    continue
+                elif cmd == "/save":
+                    filename = parts[1] if len(parts) > 1 else "Dockerfile"
+                    with open(filename, "w") as f:
+                        f.write(current_dockerfile)
+                    print(f"[✓] Saved to {filename}", file=sys.stderr)
+                    continue
+                elif cmd == "/show":
+                    if current_dockerfile:
+                        print_dockerfile(current_dockerfile)
+                    else:
+                        print("[ ] No Dockerfile generated yet", file=sys.stderr)
+                    continue
+                elif cmd == "/clear":
+                    messages = [{"role": "system", "content": build_system()}]
+                    current_dockerfile = ""
+                    print("[*] Chat cleared", file=sys.stderr)
+                    continue
+                elif cmd == "/template":
+                    if len(parts) > 1:
+                        t = template_lib.get_template(parts[1])
+                        if t:
+                            template = parts[1]
+                            messages[0] = {"role": "system", "content": build_system()}
+                            print(f"[*] Template: {t['name']}", file=sys.stderr)
+                        else:
+                            print(
+                                f"[!] Template not found: {parts[1]}", file=sys.stderr
+                            )
+                            print(
+                                f"[!] Available: {', '.join(template_lib.list_names())}",
+                                file=sys.stderr,
+                            )
+                    else:
+                        print("  Templates:", file=sys.stderr)
+                        for t in template_lib.list_templates():
+                            print(f"    {t['name']:12} - {t['description']}")
+                    continue
+                elif cmd == "/model":
+                    if len(parts) > 1:
+                        model = parts[1]
+                        print(f"[*] Model: {model}", file=sys.stderr)
+                    else:
+                        print(f"[*] Current model: {model}", file=sys.stderr)
+                    continue
+                else:
+                    print(f"[!] Unknown command: {cmd}", file=sys.stderr)
+                    continue
+
+            # NATURAL LANGUAGE -> MODEL
+            print("[*] Generating...", file=sys.stderr)
+            content = generate(line)
+            current_dockerfile = clean(content)
+
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": f"```dockerfile\n{current_dockerfile}\n```",
+                }
+            )
+            print_dockerfile(current_dockerfile)
 
         except KeyboardInterrupt:
             print("\nbye!", file=sys.stderr)
