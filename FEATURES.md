@@ -14,6 +14,7 @@ Tracking ideas and implementation status.
 | Interactive mode | ✅ Done | `-i` with /slash commands |
 | Template library | ✅ Done | FastAPI, Django, Express, Next.js, Go, Flask |
 | .env config | ✅ Done | DEFAULT_MODEL reads from .env |
+| Validation | ✅ Done | Basic + hadolint (`--validate --lint`) |
 
 ---
 
@@ -21,23 +22,23 @@ Tracking ideas and implementation status.
 
 | # | Feature | Priority | Notes |
 |---|---------|----------|-------|
-| 3 | **Dockerfile validation** | High | `docker build --dry-run` to verify |
 | 4 | **Generate FROM existing** | Medium | From requirements.txt / package.json |
-| 5 | **History & favorites** | Medium | Save/reuse generations |
-| 6 | **Analysis mode** | Medium | Optimize existing Dockerfiles |
-| 7 | **Dockerfile → description** | Low | Explain what a Dockerfile does |
-| 8 | **Multi-file output** | Low | .dockerignore, docker-compose.yml |
-| 9 | **Preset flags** | Low | `--security`, `--small` |
-| 10 | **Share via QR** | Low | Shareable URL |
+| 5 | **Feedback system** | Medium | Auto-learns from corrections & tips, retrieves relevant on next gen |
+| 6 | **History & favorites** | Medium | Save/reuse generations |
+| 7 | **Analysis mode** | Medium | Optimize existing Dockerfiles |
+| 8 | **Dockerfile → description** | Low | Explain what a Dockerfile does |
+| 9 | **Multi-file output** | Low | .dockerignore, docker-compose.yml |
+| 10 | **Preset flags** | Low | `--security`, `--small` |
+| 11 | **Share via QR** | Low | Shareable URL |
 
 ---
 
 ## Priorities
 
 ### Next
-- Dockerfile validation
+- Generate FROM existing (from requirements.txt/package.json)
+- History
 
 ### Later
-- Generate FROM existing
 - Analysis mode
-- History
+- Multi-file output

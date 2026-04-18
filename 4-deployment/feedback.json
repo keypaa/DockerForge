@@ -1,0 +1,20 @@
+[
+  {
+    "text": "FastAPI uses port 5000",
+    "tags": [
+      "port",
+      "fastapi"
+    ],
+    "added": "now"
+  },
+  {
+    "text": "PostgreSQL uses port 5432",
+    "tags": [],
+    "added": "now"
+  },
+  {
+    "text": "--list",
+    "tags": [],
+    "added": "now"
+  }
+]

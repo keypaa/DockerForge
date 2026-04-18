@@ -19,6 +19,7 @@ from openai import OpenAI
 import config
 import templates as template_lib
 import validate
+import feedback
 
 # Configuration
 NIM_BASE_URL = config.NIM_BASE_URL
@@ -460,6 +461,10 @@ def run_chat(
 
     def generate(prompt: str):
         """Generate from model."""
+        # Inject relevant feedback into prompt
+        fb_context = feedback.format_for_prompt(prompt)
+        full_prompt = f"{fb_context}\n{prompt}" if fb_context else prompt
+
         extra_params = {}
         if "glm" in model.lower():
             extra_params["extra_body"] = {
@@ -471,7 +476,7 @@ def run_chat(
 
         response = client.chat.completions.create(
             model=model,
-            messages=messages + [{"role": "user", "content": prompt}],
+            messages=messages + [{"role": "user", "content": full_prompt}],
             temperature=temperature,
             max_tokens=2048,
             **extra_params,
@@ -537,6 +542,10 @@ def run_chat(
                         file=sys.stderr,
                     )
                     print("    /clear        - clear chat history", file=sys.stderr)
+                    print(
+                        "    /feedback    - store tip (e.g., /feedback FastAPI uses port 5000)",
+                        file=sys.stderr,
+                    )
                     print("    /help         - show this help", file=sys.stderr)
                     print("  Examples:", file=sys.stderr)
                     print("    FastAPI with Redis", file=sys.stderr)
@@ -559,6 +568,34 @@ def run_chat(
                     messages = [{"role": "system", "content": build_system()}]
                     current_dockerfile = ""
                     print("[*] Chat cleared", file=sys.stderr)
+                    continue
+                elif cmd == "/feedback":
+                    # Parse: /feedback [--list|--clear] [text]
+                    cmd_parts = parts[1:]
+                    if "--list" in cmd_parts:
+                        all_fb = feedback.list_feedback()
+                        if all_fb:
+                            print("  Stored feedback:", file=sys.stderr)
+                            for fb in all_fb:
+                                tags = fb.get("tags", [])
+                                print(
+                                    f"    {fb['text'][:60]} [{', '.join(tags)}]",
+                                    file=sys.stderr,
+                                )
+                        else:
+                            print("  No feedback stored yet", file=sys.stderr)
+                    elif "--clear" in cmd_parts:
+                        feedback.clear_feedback()
+                        print("[*] Feedback cleared", file=sys.stderr)
+                    elif len(cmd_parts) > 0:
+                        # Store feedback text
+                        fb_text = " ".join(cmd_parts)
+                        feedback.add_feedback(fb_text)
+                        print(f"[✓] Feedback stored", file=sys.stderr)
+                    else:
+                        print("  /feedback <text>   - store feedback", file=sys.stderr)
+                        print("  /feedback --list   - show stored", file=sys.stderr)
+                        print("  /feedback --clear - clear all", file=sys.stderr)
                     continue
                 elif cmd == "/template":
                     if len(parts) > 1:
