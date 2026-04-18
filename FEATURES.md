@@ -27,7 +27,7 @@ Tracking ideas and implementation status.
 | 4 | **Generate FROM existing** | ✅ Done | /from command parses requirements.txt etc. |
 | 5 | **History & favorites** | Medium | Save/reuse generations |
 | 6 | **Analysis mode** | Medium | Optimize existing Dockerfiles |
-| 7 | **Multi-file output** | Low | .dockerignore, docker-compose.yml |
+| 7 | **Multi-file output** | ✅ Done | --compose generates docker-compose.yml + .dockerignore |
 | 8 | **Preset flags** | Low | `--security`, `--small` |
 | 9 | **Share via QR** | Low | Shareable URL |
 
