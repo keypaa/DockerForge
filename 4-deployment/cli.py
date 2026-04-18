@@ -6,6 +6,7 @@ Usage:
     python cli.py "FastAPI app with PostgreSQL"
     python cli.py --model z-ai/glm4.7 "Node.js Express with MongoDB"
     python cli.py --template fastapi "with PostgreSQL"
+    python cli.py --chat "FastAPI app"
     cat input.txt | python cli.py --stream
 """
 
@@ -33,7 +34,89 @@ Guidelines:
 - Proper CMD/ENTRYPOINT
 - Expose only needed ports
 
-Respond ONLY with the complete Dockerfile. No markdown fences, no explanations."""
+Respond ONLY with the Dockerfile. No explanations."""
+
+
+class ChatSession:
+    """Interactive chat session for iterating on Dockerfiles."""
+
+    def __init__(self, model: str, temperature: float = 0.3):
+        self.model = model
+        self.temperature = temperature
+        self.client = get_client()
+        self.dockerfile = ""
+        self.messages = []
+
+    def start(self, description: str, template: str = None):
+        """Start a new chat with initial description."""
+        # Build system message
+        system_msg = DOCKERFILE_SYSTEM_PROMPT
+
+        # Add template context if provided
+        if template:
+            t = template_lib.get_template(template)
+            if t:
+                description = template_lib.render_prompt(t, description)
+                system_msg += f"\n\nTemplate: {t['name']}"
+
+        self.messages = [
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": f"Generate a Dockerfile for: {description}"},
+        ]
+
+    def generate(self) -> str:
+        """Generate Dockerfile from current context."""
+        # Get extra params for GLM
+        extra_params = {}
+        if "glm" in self.model.lower():
+            extra_params["extra_body"] = {
+                "chat_template_kwargs": {
+                    "enable_thinking": False,
+                    "clear_thinking": False,
+                }
+            }
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=self.messages,
+            temperature=self.temperature,
+            max_tokens=2048,
+            **extra_params,
+        )
+
+        content = response.choices[0].message.content
+        self.dockerfile = self._clean_dockerfile(content)
+        return self.dockerfile
+
+    def modify(self, instruction: str) -> str:
+        """Modify current Dockerfile with instruction."""
+        # Add current Dockerfile to context
+        self.messages.append(
+            {"role": "assistant", "content": f"```dockerfile\n{self.dockerfile}\n```"}
+        )
+        self.messages.append({"role": "user", "content": instruction})
+
+        # Generate with updated context
+        return self.generate()
+
+    def _clean_dockerfile(self, content: str) -> str:
+        """Clean up Dockerfile from response."""
+        if "```dockerfile" in content:
+            start = content.find("```dockerfile") + len("```dockerfile")
+            end = content.find("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.find("```") + 3
+            end = content.find("```", start)
+            if end > start:
+                content = content[start:end].strip()
+        return content
+
+    def print_dockerfile(self):
+        """Print current Dockerfile."""
+        print("\n" + "=" * 50)
+        print(self.dockerfile)
+        print("=" * 50)
 
 
 def get_api_key() -> str:
@@ -181,6 +264,9 @@ def main():
     parser.add_argument(
         "--list-templates", "-L", action="store_true", help="List available templates"
     )
+    parser.add_argument(
+        "--chat", "-C", action="store_true", help="Start interactive chat mode"
+    )
 
     args = parser.parse_args()
 
@@ -220,6 +306,11 @@ def main():
         print("Error: No description provided", file=sys.stderr)
         sys.exit(1)
 
+    # CHAT MODE
+    if args.chat:
+        run_chat(description, args.template, args.model, args.temperature)
+        return
+
     print("[*] Generating Dockerfile...", file=sys.stderr)
     print(f"[*] Model: {args.model}", file=sys.stderr)
     print(f"[*] Stream: {args.stream}", file=sys.stderr)
@@ -249,6 +340,70 @@ def main():
     except Exception as e:
         print(f"[!] Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def run_chat(
+    initial_description: str,
+    template: str = None,
+    model: str = None,
+    temperature: float = 0.3,
+):
+    """Run interactive chat mode."""
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    session = ChatSession(model or DEFAULT_MODEL, temperature)
+    session.start(initial_description, template)
+
+    print("[*] Chat mode started", file=sys.stderr)
+    print("[*] Enter modifications (Ctrl+C to exit)", file=sys.stderr)
+    print("", file=sys.stderr)
+
+    # Generate initial Dockerfile
+    print("[*] Generating...", file=sys.stderr)
+    session.generate()
+    session.print_dockerfile()
+
+    # Chat loop
+    while True:
+        try:
+            instruction = input("\n> ").strip()
+            if not instruction:
+                continue
+
+            # Handle special commands
+            if instruction.lower() in ("exit", "quit", "q"):
+                break
+            if instruction.lower() == "save":
+                filename = input("  Filename: ").strip() or "Dockerfile"
+                with open(filename, "w") as f:
+                    f.write(session.dockerfile)
+                print(f"[✓] Saved to {filename}", file=sys.stderr)
+                continue
+            if instruction.lower() == "show":
+                session.print_dockerfile()
+                continue
+            if instruction.lower() == "help":
+                print("  Commands: save, show, help, exit/quit/q", file=sys.stderr)
+                print("  Examples:", file=sys.stderr)
+                print("    change base to alpine", file=sys.stderr)
+                print("    add redis for caching", file=sys.stderr)
+                print("    make it smaller", file=sys.stderr)
+                print("    switch to gunicorn", file=sys.stderr)
+                continue
+
+            # Generate modification
+            print("[*] Modifying...", file=sys.stderr)
+            session.modify(instruction)
+            session.print_dockerfile()
+
+        except KeyboardInterrupt:
+            print("\nbye!", file=sys.stderr)
+            break
+        except EOFError:
+            break
 
 
 if __name__ == "__main__":
